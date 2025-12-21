@@ -1,3 +1,5 @@
+https://negrostan.github.io/negrostan/
+[Офіційний сайт Негростана](https://negrostan.github.io/negrostan/)
 Официальный сайт Негростана
 официальный сайт негростана
 Офіційний сайт Негростана
