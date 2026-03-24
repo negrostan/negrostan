@@ -1,59 +1,135 @@
-// --- ТВОЙ ПАРОЛЬ (КЛЮЧ) ---
-var PASS = "9900_SECRET"; 
-
-// Простейший XOR для Opera Mini (Base64 + смещение)
-function xor_encrypt(str, key) {
-    var out = "";
-    for (var i = 0; i < str.length; i++) {
-        out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-    }
-    // Кодируем в Base64, чтобы Telegram не подавился спецсимволами
-    return btoa(unescape(encodeURIComponent(out)));
-}
-
-function xor_decrypt(b64, key) {
-    try {
-        var str = decodeURIComponent(escape(atob(b64)));
-        var out = "";
-        for (var i = 0; i < str.length; i++) {
-            out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TG 9900 Fixed</title>
+    <style>
+        html, body { 
+            background: #0e1621; color: #fff; font-family: sans-serif; 
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
         }
-        return out;
-    } catch(e) { return "[Ошибка расшифровки]"; }
-}
+        /* Используем div вместо textarea для нормального рендера в Opera */
+        #log { 
+            background: #0e1621; 
+            position: absolute; top: 0; bottom: 50px; left: 0; right: 0;
+            padding: 5px; box-sizing: border-box; 
+            overflow-y: scroll; -webkit-overflow-scrolling: touch;
+        }
+        /* Стиль для отдельного сообщения */
+        .msg-item {
+            background: #17212b;
+            margin-bottom: 4px; /* Разделение между сообщениями */
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            border-left: 3px solid #5288c1; /* Синяя полоска слева для вида */
+        }
+        .msg-author { color: #5288c1; font-weight: bold; margin-right: 5px; }
 
-// Замени логику в renderLog:
-function renderLog() {
-    var html = "";
-    var keys = Object.keys(msgCache).sort(function(a,b){return a-b;});
-    for (var i = 0; i < keys.length; i++) {
-        var raw = msgCache[keys[i]];
-        var sep = raw.indexOf(": ");
-        var name = raw.substring(0, sep);
-        var crypt = raw.substring(sep + 2);
-        
-        // РАСШИФРОВЫВАЕМ
-        var clearText = xor_decrypt(crypt, PASS);
+        .bottom-bar { 
+            background: #17212b; height: 50px; width: 100%; 
+            position: absolute; bottom: 0; display: table; border-top: 1px solid #0e1621;
+        }
+        .cell { display: table-cell; vertical-align: middle; }
+        input { background: transparent; border: none; color: #fff; font-size: 16px; width: 100%; outline: none; }
+        .n-cell { width: 65px; border-right: 1px solid #0e1621; text-align: center; }
+        .n-in { color: #5288c1; font-weight: bold; text-align: center; }
+        .m-cell { padding: 0 10px; }
+        .b-cell { width: 50px; text-align: center; }
+        .btn { background: none; border: none; color: #5288c1; font-size: 24px; font-weight: bold; width: 50px; height: 50px; }
+    </style>
+</head>
+<body>
 
-        html += '<div style="background:#17212b;margin:4px;padding:5px;border-left:3px solid #5288c1;">' +
-                '<b>' + name + ':</b> ' + clearText + '</div>';
-    }
-    document.getElementById('log').innerHTML = html;
-}
+    <div id="log">Подключение...</div>
 
-// Замени логику в sendMessage:
-function sendMessage() {
-    var val = document.getElementById('message').value;
-    if (!val) return;
-    
-    // ШИФРУЕМ
-    var encrypted = xor_encrypt(val, PASS);
-    
-    var fullMsg = document.getElementById('nick').value + ": " + encrypted;
-    document.getElementById('message').value = ""; 
+    <div class="bottom-bar">
+        <div class="cell n-cell"><input type="text" id="nick" class="n-in" value="9900" maxlength="8"></div>
+        <div class="cell m-cell"><input type="text" id="message" placeholder="Сообщение" autocomplete="off"></div>
+        <div class="cell b-cell"><button onclick="sendMessage()" class="btn">➔</button></div>
+    </div>
 
-    var xhr = new XMLHttpRequest();
-    var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
-    xhr.open("GET", url, true);
-    xhr.send();
-}
+    <script>
+        var WRITE_TOKEN = "8695998162:AAEV5A_uo10VDZZQim7GHLqLpwXfaWIBMOk";
+        var READ_TOKEN  = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo";
+        var chatId      = "-1003714052459"; 
+
+        var log = document.getElementById('log');
+        var msgIn = document.getElementById('message');
+        var nickIn = document.getElementById('nick');
+        var msgCache = {};
+
+        function renderLog() {
+            var html = "";
+            var keys = [];
+            for (var k in msgCache) keys.push(Number(k));
+            keys.sort(function(a, b) { return a - b; });
+
+            for (var i = 0; i < keys.length; i++) {
+                var raw = msgCache[keys[i]]; // Формат "Ник: Текст"
+                var sep = raw.indexOf(": ");
+                var name = raw.substring(0, sep);
+                var text = raw.substring(sep + 2);
+
+                html += '<div class="msg-item"><span class="msg-author">' + name + ':</span>' + text + '</div>';
+            }
+            log.innerHTML = html;
+            // Прокрутка вниз
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function update(limit) {
+            var xhr = new XMLHttpRequest();
+            var url = "https://api.telegram.org/bot" + READ_TOKEN + "/getUpdates?limit=" + limit + "&offset=-" + limit;
+            
+            xhr.open("GET", url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.ok && data.result) {
+                        var changed = false;
+                        for (var i = 0; i < data.result.length; i++) {
+                            var m = data.result[i].channel_post || data.result[i].message;
+                            if (m && String(m.chat.id) === chatId) {
+                                var mid = m.message_id;
+                                if (!msgCache[mid]) {
+                                    var text = m.text || m.caption || "";
+                                    if (text) {
+                                        msgCache[mid] = text;
+                                        changed = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (changed) renderLog();
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function sendMessage() {
+            var val = msgIn.value;
+            if (!val) return;
+            var fullMsg = nickIn.value + ": " + val;
+            msgIn.value = ""; 
+
+            var xhr = new XMLHttpRequest();
+            var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
+            xhr.open("GET", url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) setTimeout(function() { update(5); }, 1000);
+            };
+            xhr.send();
+        }
+
+        msgIn.onkeypress = function(e) { if (e.keyCode == 13) sendMessage(); };
+
+        update(30); 
+        setInterval(function() { update(10); }, 4000); 
+    </script>
+</body>
+</html>
