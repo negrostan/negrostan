@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TG History Terminal</title>
+    <style>
+        html, body { background: #0e1621; color: #fff; font-family: sans-serif; margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
+        #log { background: #0e1621; color: #fff; border: none; width: 100%; height: calc(100% - 52px); font-size: 13px; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: scroll; display: block; line-height: 1.5; border-bottom: 1px solid #17212b; }
+        .bottom-bar { background: #17212b; height: 50px; width: 100%; position: absolute; bottom: 0; display: table; }
+        .cell { display: table-cell; vertical-align: middle; height: 50px; }
+        input { background: transparent; border: none; color: #fff; font-size: 15px; width: 100%; outline: none; }
+        .n-cell { width: 60px; border-right: 1px solid #0e1621; text-align: center; }
+        .n-in { color: #5288c1; font-weight: bold; text-align: center; border: none; background: none; width: 100%; }
+        .m-cell { padding: 0 10px; }
+        .b-cell { width: 50px; text-align: center; }
+        .btn { background: none; border: none; color: #5288c1; font-size: 24px; font-weight: bold; width: 50px; height: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <textarea readonly id="log">Loading history...</textarea>
+
+    <div class="bottom-bar">
+        <div class="cell n-cell"><input type="text" id="nick" class="n-in" value="9900" maxlength="8"></div>
+        <div class="cell m-cell"><input type="text" id="message" placeholder="Message" autocomplete="off"></div>
+        <div class="cell b-cell"><button onclick="sendMessage()" class="btn">➔</button></div>
+    </div>
+
+    <script>
+        // --- ТОКЕНЫ ---
+        var WRITE_TOKEN = "8695998162:AAEV5A_uo10VDZZQim7GHLqLpwXfaWIBMOk"; // Бот-Писатель
+        var READ_TOKEN  = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo"; // Бот-Слушатель
+        var chatId      = "-1003714052459"; 
+
+        var log = document.getElementById('log');
+        var msgIn = document.getElementById('message');
+        var nickIn = document.getElementById('nick');
+        var msgCache = {};
+
+        function renderLog() {
+            var allText = "";
+            var keys = [];
+            for (var k in msgCache) keys.push(Number(k));
+            keys.sort(function(a, b) { return a - b; });
+            for (var i = 0; i < keys.length; i++) {
+                allText += msgCache[keys[i]] + "\n";
+            }
+            log.value = allText;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function update(limit) {
+            var xhr = new XMLHttpRequest();
+            // Слушатель читает то, что отправил Писатель
+            var url = "https://api.telegram.org/bot" + READ_TOKEN + "/getUpdates?limit=" + limit + "&offset=-" + limit;
+            
+            xhr.open("GET", url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.ok && data.result) {
+                        var changed = false;
+                        for (var i = 0; i < data.result.length; i++) {
+                            var m = data.result[i].channel_post || data.result[i].message;
+                            if (m && String(m.chat.id) === chatId) {
+                                var mid = m.message_id;
+                                if (!msgCache[mid]) {
+                                    var text = m.text || m.caption || "";
+                                    if (text) {
+                                        msgCache[mid] = text;
+                                        changed = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (changed) renderLog();
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function sendMessage() {
+            var val = msgIn.value;
+            if (!val) return;
+            var fullMsg = nickIn.value + ": " + val;
+            msgIn.value = ""; 
+
+            var xhr = new XMLHttpRequest();
+            // Писатель отправляет
+            var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
+            xhr.open("GET", url, true);
+            xhr.onreadystatechange = function() {
+                // После отправки Писателем, Слушатель увидит это через 1-2 секунды
+                if (xhr.readyState == 4) setTimeout(function() { update(5); }, 1000);
+            };
+            xhr.send();
+        }
+
+        msgIn.onkeypress = function(e) { if (e.keyCode == 13) sendMessage(); };
+
+        // При загрузке тянем последние 50 постов (вся история за полчаса-час)
+        update(50); 
+        // Каждые 4 секунды проверяем новые
+        setInterval(function() { update(10); }, 4000); 
+    </script>
+</body>
+</html>
