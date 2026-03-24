@@ -3,58 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG 9900 Fixed</title>
+    <title>Signal</title>
     <style>
-        html, body { 
-            background: #0e1621; color: #fff; font-family: sans-serif; 
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-        }
-        /* Используем div вместо textarea для нормального рендера в Opera */
-        #log { 
-            background: #0e1621; 
-            position: absolute; top: 0; bottom: 50px; left: 0; right: 0;
-            padding: 5px; box-sizing: border-box; 
-            overflow-y: scroll; -webkit-overflow-scrolling: touch;
-        }
-        /* Стиль для отдельного сообщения */
-        .msg-item {
-            background: #17212b;
-            margin-bottom: 4px; /* Разделение между сообщениями */
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            border-left: 3px solid #5288c1; /* Синяя полоска слева для вида */
-        }
-        .msg-author { color: #5288c1; font-weight: bold; margin-right: 5px; }
-
-        .bottom-bar { 
-            background: #17212b; height: 50px; width: 100%; 
-            position: absolute; bottom: 0; display: table; border-top: 1px solid #0e1621;
-        }
-        .cell { display: table-cell; vertical-align: middle; }
-        input { background: transparent; border: none; color: #fff; font-size: 16px; width: 100%; outline: none; }
-        .n-cell { width: 65px; border-right: 1px solid #0e1621; text-align: center; }
-        .n-in { color: #5288c1; font-weight: bold; text-align: center; }
+        html, body { background: #0e1621; color: #fff; font-family: sans-serif; margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; }
+        #log { background: #0e1621; color: #fff; border: none; width: 100%; height: calc(100% - 52px); font-size: 13px; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: scroll; display: block; line-height: 1.5; border-bottom: 1px solid #17212b; }
+        .bottom-bar { background: #17212b; height: 50px; width: 100%; position: absolute; bottom: 0; display: table; }
+        .cell { display: table-cell; vertical-align: middle; height: 50px; }
+        input { background: transparent; border: none; color: #fff; font-size: 15px; width: 100%; outline: none; }
+        .n-cell { width: 60px; border-right: 1px solid #0e1621; text-align: center; }
+        .n-in { color: #5288c1; font-weight: bold; text-align: center; border: none; background: none; width: 100%; }
         .m-cell { padding: 0 10px; }
         .b-cell { width: 50px; text-align: center; }
-        .btn { background: none; border: none; color: #5288c1; font-size: 24px; font-weight: bold; width: 50px; height: 50px; }
+        .btn { background: none; border: none; color: #5288c1; font-size: 24px; font-weight: bold; width: 50px; height: 50px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="log">Подключение...</div>
+    <textarea readonly id="log">Loading history...</textarea>
 
     <div class="bottom-bar">
         <div class="cell n-cell"><input type="text" id="nick" class="n-in" value="9900" maxlength="8"></div>
-        <div class="cell m-cell"><input type="text" id="message" placeholder="Сообщение" autocomplete="off"></div>
-        <div class="cell b-cell"><button onclick="sendMessage()" class="btn">➔</button></div>
+        <div class="cell m-cell"><input type="text" id="message" placeholder="Message" autocomplete="off"></div>
+        <div class="cell b-cell"><button onclick="sendMessage()" class="btn">-></button></div>
     </div>
 
     <script>
-        var WRITE_TOKEN = "8695998162:AAEV5A_uo10VDZZQim7GHLqLpwXfaWIBMOk";
-        var READ_TOKEN  = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo";
+        // --- ТОКЕНЫ ---
+        var WRITE_TOKEN = "8695998162:AAEV5A_uo10VDZZQim7GHLqLpwXfaWIBMOk"; // Бот-Писатель
+        var READ_TOKEN  = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo"; // Бот-Слушатель
         var chatId      = "-1003714052459"; 
 
         var log = document.getElementById('log');
@@ -63,26 +39,20 @@
         var msgCache = {};
 
         function renderLog() {
-            var html = "";
+            var allText = "";
             var keys = [];
             for (var k in msgCache) keys.push(Number(k));
             keys.sort(function(a, b) { return a - b; });
-
             for (var i = 0; i < keys.length; i++) {
-                var raw = msgCache[keys[i]]; // Формат "Ник: Текст"
-                var sep = raw.indexOf(": ");
-                var name = raw.substring(0, sep);
-                var text = raw.substring(sep + 2);
-
-                html += '<div class="msg-item"><span class="msg-author">' + name + ':</span>' + text + '</div>';
+                allText += msgCache[keys[i]] + "\n";
             }
-            log.innerHTML = html;
-            // Прокрутка вниз
+            log.value = allText;
             log.scrollTop = log.scrollHeight;
         }
 
         function update(limit) {
             var xhr = new XMLHttpRequest();
+            // Слушатель читает то, что отправил Писатель
             var url = "https://api.telegram.org/bot" + READ_TOKEN + "/getUpdates?limit=" + limit + "&offset=-" + limit;
             
             xhr.open("GET", url, true);
@@ -118,9 +88,11 @@
             msgIn.value = ""; 
 
             var xhr = new XMLHttpRequest();
+            // Писатель отправляет
             var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
             xhr.open("GET", url, true);
             xhr.onreadystatechange = function() {
+                // После отправки Писателем, Слушатель увидит это через 1-2 секунды
                 if (xhr.readyState == 4) setTimeout(function() { update(5); }, 1000);
             };
             xhr.send();
@@ -128,7 +100,9 @@
 
         msgIn.onkeypress = function(e) { if (e.keyCode == 13) sendMessage(); };
 
-        update(30); 
+        // При загрузке тянем последние 50 постов (вся история за полчаса-час)
+        update(50); 
+        // Каждые 4 секунды проверяем новые
         setInterval(function() { update(10); }, 4000); 
     </script>
 </body>
