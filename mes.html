@@ -1,88 +1,59 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BB Chat Terminal</title>
-    <style>
-        /* Используем флоаты или абсолютное позиционирование вместо Flexbox (он глючит на OS 7) */
-        body { background: #000; color: #eee; font-family: "Courier New", monospace; margin: 0; padding: 0; overflow: hidden; }
-        #log { 
-            position: absolute; top: 0; left: 0; right: 0; bottom: 60px;
-            overflow-y: scroll; padding: 10px; word-wrap: break-word;
-            border-bottom: 1px solid #333;
-        }
-        .msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding-bottom: 4px; font-size: 16px; }
-        .nick { color: #00AA00; font-weight: bold; }
-        .input-area { 
-            position: absolute; bottom: 0; left: 0; right: 0; height: 60px; 
-            background: #111; display: block; padding: 5px;
-        }
-        input[type="text"] { 
-            background: #222; border: 1px solid #444; color: #fff; 
-            height: 40px; font-size: 18px; padding: 0 5px; width: 70%;
-        }
-        button { height: 42px; width: 25%; background: #333; color: #fff; border: 1px solid #555; vertical-align: top; }
-    </style>
-</head>
-<body>
+// --- ТВОЙ ПАРОЛЬ (КЛЮЧ) ---
+var PASS = "9900_SECRET"; 
 
-<div id="log">Загрузка истории...</div>
-
-<div class="input-area">
-    <input type="text" id="msgIn" placeholder="Текст...">
-    <button onclick="send()">➔</button>
-</div>
-
-<script>
-    var TOKEN = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo";
-    var CHAT_ID = "-1003714052459";
-    var lastUpdateId = 0;
-
-    function getUpdates() {
-        var xhr = new XMLHttpRequest();
-        // Используем JSONP или просто GET. Штатный браузер BB хорошо ест обычный XHR.
-        xhr.open("GET", "https://api.telegram.org/bot" + TOKEN + "/getUpdates?offset=" + (lastUpdateId + 1), true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                var res = JSON.parse(xhr.responseText);
-                if (res.ok && res.result.length > 0) {
-                    for (var i = 0; i < res.result.length; i++) {
-                        var up = res.result[i];
-                        lastUpdateId = up.update_id;
-                        var m = up.channel_post || up.message;
-                        if (m && m.text) {
-                            var div = document.createElement('div');
-                            div.className = 'msg';
-                            div.innerHTML = '<span class="nick">User:</span> ' + m.text;
-                            document.getElementById('log').appendChild(div);
-                        }
-                    }
-                    var l = document.getElementById('log');
-                    l.scrollTop = l.scrollHeight;
-                }
-            }
-        };
-        xhr.send();
+// Простейший XOR для Opera Mini (Base64 + смещение)
+function xor_encrypt(str, key) {
+    var out = "";
+    for (var i = 0; i < str.length; i++) {
+        out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
+    // Кодируем в Base64, чтобы Telegram не подавился спецсимволами
+    return btoa(unescape(encodeURIComponent(out)));
+}
 
-    function send() {
-        var txt = document.getElementById('msgIn').value;
-        if (!txt) return;
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "https://api.telegram.org/bot" + TOKEN + "/sendMessage?chat_id=" + CHAT_ID + "&text=" + encodeURIComponent(txt), true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
-                document.getElementById('msgIn').value = "";
-                getUpdates();
-            }
-        };
-        xhr.send();
+function xor_decrypt(b64, key) {
+    try {
+        var str = decodeURIComponent(escape(atob(b64)));
+        var out = "";
+        for (var i = 0; i < str.length; i++) {
+            out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+        return out;
+    } catch(e) { return "[Ошибка расшифровки]"; }
+}
+
+// Замени логику в renderLog:
+function renderLog() {
+    var html = "";
+    var keys = Object.keys(msgCache).sort(function(a,b){return a-b;});
+    for (var i = 0; i < keys.length; i++) {
+        var raw = msgCache[keys[i]];
+        var sep = raw.indexOf(": ");
+        var name = raw.substring(0, sep);
+        var crypt = raw.substring(sep + 2);
+        
+        // РАСШИФРОВЫВАЕМ
+        var clearText = xor_decrypt(crypt, PASS);
+
+        html += '<div style="background:#17212b;margin:4px;padding:5px;border-left:3px solid #5288c1;">' +
+                '<b>' + name + ':</b> ' + clearText + '</div>';
     }
+    document.getElementById('log').innerHTML = html;
+}
 
-    // Автообновление каждые 5 секунд
-    setInterval(getUpdates, 5000);
-    getUpdates();
-</script>
-</body>
-</html>
+// Замени логику в sendMessage:
+function sendMessage() {
+    var val = document.getElementById('message').value;
+    if (!val) return;
+    
+    // ШИФРУЕМ
+    var encrypted = xor_encrypt(val, PASS);
+    
+    var fullMsg = document.getElementById('nick').value + ": " + encrypted;
+    document.getElementById('message').value = ""; 
+
+    var xhr = new XMLHttpRequest();
+    var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
+    xhr.open("GET", url, true);
+    xhr.send();
+}
