@@ -3,29 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG 9900 Fixed</title>
+    <title>TG 9900 Terminal</title>
     <style>
         html, body { 
             background: #0e1621; color: #fff; font-family: sans-serif; 
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
         }
-        /* Используем div вместо textarea для нормального рендера в Opera */
         #log { 
             background: #0e1621; 
             position: absolute; top: 0; bottom: 50px; left: 0; right: 0;
             padding: 5px; box-sizing: border-box; 
             overflow-y: scroll; -webkit-overflow-scrolling: touch;
         }
-        /* Стиль для отдельного сообщения */
         .msg-item {
             background: #17212b;
-            margin-bottom: 4px; /* Разделение между сообщениями */
+            margin-bottom: 4px;
             padding: 6px 10px;
             border-radius: 4px;
             font-size: 14px;
             line-height: 1.4;
             word-wrap: break-word;
-            border-left: 3px solid #5288c1; /* Синяя полоска слева для вида */
+            border-left: 3px solid #5288c1;
         }
         .msg-author { color: #5288c1; font-weight: bold; margin-right: 5px; }
 
@@ -47,7 +45,7 @@
     <div id="log">Подключение...</div>
 
     <div class="bottom-bar">
-        <div class="cell n-cell"><input type="text" id="nick" class="n-in" value="9900" maxlength="8"></div>
+        <div class="cell n-cell"><input type="text" id="nick" name="nickname" class="n-in" value="User" maxlength="8"></div>
         <div class="cell m-cell"><input type="text" id="message" placeholder="Сообщение" autocomplete="off"></div>
         <div class="cell b-cell"><button onclick="sendMessage()" class="btn">➔</button></div>
     </div>
@@ -62,6 +60,30 @@
         var nickIn = document.getElementById('nick');
         var msgCache = {};
 
+        // --- ФУНКЦИИ КУКИ ---
+        function setCookie(name, value) {
+            var d = new Date();
+            d.setTime(d.getTime() + (365*24*60*60*1000)); // 1 год
+            document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+        }
+
+        function getCookie(name) {
+            var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+            return v ? v[2] : null;
+        }
+
+        // При загрузке проверяем сохраненный ник
+        var savedNick = getCookie("bb_nick");
+        if (savedNick) {
+            nickIn.value = savedNick;
+        }
+
+        // Сохраняем ник при каждом его изменении
+        nickIn.onchange = function() {
+            setCookie("bb_nick", this.value);
+        };
+
+        // --- ЛОГИКА ЧАТА ---
         function renderLog() {
             var html = "";
             var keys = [];
@@ -69,15 +91,14 @@
             keys.sort(function(a, b) { return a - b; });
 
             for (var i = 0; i < keys.length; i++) {
-                var raw = msgCache[keys[i]]; // Формат "Ник: Текст"
+                var raw = msgCache[keys[i]];
                 var sep = raw.indexOf(": ");
-                var name = raw.substring(0, sep);
-                var text = raw.substring(sep + 2);
+                var name = (sep > -1) ? raw.substring(0, sep) : "System";
+                var text = (sep > -1) ? raw.substring(sep + 2) : raw;
 
                 html += '<div class="msg-item"><span class="msg-author">' + name + ':</span>' + text + '</div>';
             }
             log.innerHTML = html;
-            // Прокрутка вниз
             log.scrollTop = log.scrollHeight;
         }
 
@@ -121,7 +142,11 @@
             var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
             xhr.open("GET", url, true);
             xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) setTimeout(function() { update(5); }, 1000);
+                if (xhr.readyState == 4) {
+                    // После отправки обновляем куки на случай если юзер сменил ник прямо перед нажатием
+                    setCookie("bb_nick", nickIn.value);
+                    setTimeout(function() { update(5); }, 1000);
+                }
             };
             xhr.send();
         }
