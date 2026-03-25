@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signal Settings</title>
+    <style>
+        body { background: #0e1621; color: #fff; font-family: sans-serif; padding: 20px; }
+        .field { margin-bottom: 15px; }
+        label { display: block; color: #5288c1; font-size: 12px; margin-bottom: 5px; }
+        input { 
+            background: #17212b; border: 1px solid #5288c1; color: #fff; 
+            padding: 10px; width: 100%; box-sizing: border-box; border-radius: 4px;
+        }
+        .btn-save { 
+            background: #5288c1; border: none; color: #fff; padding: 12px; 
+            width: 100%; font-weight: bold; border-radius: 4px; cursor: pointer;
+        }
+        .back { display: block; text-align: center; margin-top: 20px; color: #5288c1; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h2>Настройки</h2>
+    <div class="field">
+        <label>WRITE TOKEN</label>
+        <input type="text" id="w_token">
+    </div>
+    <div class="field">
+        <label>READ TOKEN</label>
+        <input type="text" id="r_token">
+    </div>
+    <div class="field">
+        <label>CHAT ID (e.g. -100...)</label>
+        <input type="text" id="c_id">
+    </div>
+    <button class="btn-save" onclick="saveSettings()">Сохранить</button>
+    <a href="index.html" class="back">← Вернуться в чат</a>
+
+    <script>
+        function setCookie(n, v) {
+            var d = new Date(); d.setTime(d.getTime() + (365*24*60*60*1000));
+            document.cookie = n + "=" + v + ";expires=" + d.toUTCString() + ";path=/";
+        }
+        function getCookie(n) {
+            var v = document.cookie.match('(^|;) ?' + n + '=([^;]*)(;|$)');
+            return v ? v[2] : "";
+        }
+
+        // Загружаем текущие значения
+        document.getElementById('w_token').value = getCookie("tg_w_token");
+        document.getElementById('r_token').value = getCookie("tg_r_token");
+        document.getElementById('c_id').value = getCookie("tg_chat_id");
+
+        function saveSettings() {
+            setCookie("tg_w_token", document.getElementById('w_token').value);
+            setCookie("tg_r_token", document.getElementById('r_token').value);
+            setCookie("tg_chat_id", document.getElementById('c_id').value);
+            alert("Настройки сохранены!");
+        }
+    </script>
+</body>
+</html>
