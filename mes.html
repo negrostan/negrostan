@@ -5,97 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Signal</title>
     <style>
-        html, body { 
-            background: #0e1621; color: #fff; font-family: sans-serif; 
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-        }
-        #log { 
-            background: #0e1621; 
-            position: absolute; top: 0; bottom: 50px; left: 0; right: 0;
-            padding: 5px; box-sizing: border-box; 
-            overflow-y: scroll; -webkit-overflow-scrolling: touch;
-        }
-        .msg-item {
-            background: #17212b;
-            margin-bottom: 4px;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            border-left: 3px solid #5288c1;
-        }
+        html, body { background: #0e1621; color: #fff; font-family: sans-serif; margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+        #log { position: absolute; top: 40px; bottom: 50px; left: 0; right: 0; padding: 5px; overflow-y: scroll; -webkit-overflow-scrolling: touch; }
+        .header { background: #17212b; height: 40px; line-height: 40px; padding: 0 10px; border-bottom: 1px solid #0e1621; display: flex; justify-content: space-between; }
+        .header a { color: #5288c1; text-decoration: none; font-size: 14px; }
+        .msg-item { background: #17212b; margin-bottom: 4px; padding: 6px 10px; border-radius: 4px; font-size: 14px; border-left: 3px solid #5288c1; word-wrap: break-word; }
         .msg-author { color: #5288c1; font-weight: bold; margin-right: 5px; }
-
-        .bottom-bar { 
-            background: #17212b; height: 50px; width: 100%; 
-            position: absolute; bottom: 0; display: table; border-top: 1px solid #0e1621;
-        }
+        .bottom-bar { background: #17212b; height: 50px; width: 100%; position: absolute; bottom: 0; display: table; border-top: 1px solid #0e1621; }
         .cell { display: table-cell; vertical-align: middle; }
         input { background: transparent; border: none; color: #fff; font-size: 16px; width: 100%; outline: none; }
-        .n-cell { width: 65px; border-right: 1px solid #0e1621; text-align: center; }
+        .n-cell { width: 65px; border-right: 1px solid #0e1621; }
         .n-in { color: #5288c1; font-weight: bold; text-align: center; }
         .m-cell { padding: 0 10px; }
         .b-cell { width: 50px; text-align: center; }
         .btn { background: none; border: none; color: #5288c1; font-size: 24px; font-weight: bold; width: 50px; height: 50px; }
+        #status { font-size: 10px; color: #5288c1; }
     </style>
 </head>
 <body>
 
-    <div id="log">Подключение...</div>
+    <div class="header">
+        <span id="status">Signal BB</span>
+        <a href="settings.html">Настройки ⚙</a>
+    </div>
+
+    <div id="log">Загрузка настроек...</div>
 
     <div class="bottom-bar">
-        <div class="cell n-cell"><input type="text" id="nick" name="nickname" class="n-in" value="User" maxlength="8"></div>
-        <div class="cell m-cell"><input type="text" id="message" placeholder="Сообщение" autocomplete="off"></div>
+        <div class="cell n-cell"><input type="text" id="nick" class="n-in" value="User" maxlength="8"></div>
+        <div class="cell m-cell"><input type="text" id="message" placeholder="Сообщение..." autocomplete="off"></div>
         <div class="cell b-cell"><button onclick="sendMessage()" class="btn">➔</button></div>
     </div>
 
     <script>
-        var WRITE_TOKEN = "8695998162:AAEV5A_uo10VDZZQim7GHLqLpwXfaWIBMOk";
-        var READ_TOKEN  = "8793448953:AAGiRZID46nM2NwQ2gKvMraY9sGG98VLnVo";
-        var chatId      = "-1003714052459"; 
+        function getCookie(n) {
+            var v = document.cookie.match('(^|;) ?' + n + '=([^;]*)(;|$)');
+            return v ? v[2] : null;
+        }
+
+        var WRITE_TOKEN = getCookie("tg_w_token");
+        var READ_TOKEN  = getCookie("tg_r_token");
+        var chatId      = getCookie("tg_chat_id");
 
         var log = document.getElementById('log');
         var msgIn = document.getElementById('message');
         var nickIn = document.getElementById('nick');
         var msgCache = {};
 
-        // --- ФУНКЦИИ КУКИ ---
-        function setCookie(name, value) {
-            var d = new Date();
-            d.setTime(d.getTime() + (365*24*60*60*1000)); // 1 год
-            document.cookie = name + "=" + value + ";expires=" + d.toUTCString() + ";path=/";
+        if (!WRITE_TOKEN || !READ_TOKEN || !chatId) {
+            log.innerHTML = "<div style='padding:20px; text-align:center;'>Нужно ввести токены в <a href='settings.html' style='color:#5288c1'>настройках</a>.</div>";
         }
 
-        function getCookie(name) {
-            var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-            return v ? v[2] : null;
-        }
-
-        // При загрузке проверяем сохраненный ник
-        var savedNick = getCookie("bb_nick");
-        if (savedNick) {
-            nickIn.value = savedNick;
-        }
-
-        // Сохраняем ник при каждом его изменении
-        nickIn.onchange = function() {
-            setCookie("bb_nick", this.value);
-        };
-
-        // --- ЛОГИКА ЧАТА ---
         function renderLog() {
             var html = "";
             var keys = [];
             for (var k in msgCache) keys.push(Number(k));
             keys.sort(function(a, b) { return a - b; });
-
             for (var i = 0; i < keys.length; i++) {
                 var raw = msgCache[keys[i]];
                 var sep = raw.indexOf(": ");
                 var name = (sep > -1) ? raw.substring(0, sep) : "System";
                 var text = (sep > -1) ? raw.substring(sep + 2) : raw;
-
                 html += '<div class="msg-item"><span class="msg-author">' + name + ':</span>' + text + '</div>';
             }
             log.innerHTML = html;
@@ -103,9 +73,9 @@
         }
 
         function update(limit) {
+            if (!READ_TOKEN) return;
             var xhr = new XMLHttpRequest();
             var url = "https://api.telegram.org/bot" + READ_TOKEN + "/getUpdates?limit=" + limit + "&offset=-" + limit;
-            
             xhr.open("GET", url, true);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {
@@ -118,10 +88,7 @@
                                 var mid = m.message_id;
                                 if (!msgCache[mid]) {
                                     var text = m.text || m.caption || "";
-                                    if (text) {
-                                        msgCache[mid] = text;
-                                        changed = true;
-                                    }
+                                    if (text) { msgCache[mid] = text; changed = true; }
                                 }
                             }
                         }
@@ -134,27 +101,26 @@
 
         function sendMessage() {
             var val = msgIn.value;
-            if (!val) return;
+            if (!val || !WRITE_TOKEN) return;
             var fullMsg = nickIn.value + ": " + val;
             msgIn.value = ""; 
-
             var xhr = new XMLHttpRequest();
             var url = "https://api.telegram.org/bot" + WRITE_TOKEN + "/sendMessage?chat_id=" + chatId + "&text=" + encodeURIComponent(fullMsg);
             xhr.open("GET", url, true);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4) {
-                    // После отправки обновляем куки на случай если юзер сменил ник прямо перед нажатием
-                    setCookie("bb_nick", nickIn.value);
-                    setTimeout(function() { update(5); }, 1000);
+                    setTimeout(function() { update(10); }, 1000);
                 }
             };
             xhr.send();
         }
 
         msgIn.onkeypress = function(e) { if (e.keyCode == 13) sendMessage(); };
-
-        update(30); 
-        setInterval(function() { update(10); }, 4000); 
+        
+        if (READ_TOKEN) {
+            update(30);
+            setInterval(function() { update(10); }, 4000);
+        }
     </script>
 </body>
 </html>
