@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BB Store</title>
+    <style>
+        body { font-family: sans-serif; background: #000; color: #fff; margin: 0; padding: 5px; }
+        .search-area { background: #222; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
+        input, select { width: 95%; margin: 5px auto; display: block; background: #333; color: #fff; border: 1px solid #555; padding: 8px; font-size: 14px; }
+        
+        .grid { width: 100%; text-align: left; }
+        .app-item { 
+            display: inline-block; width: 30%; vertical-align: top; 
+            text-align: center; margin-bottom: 15px; text-decoration: none; color: #fff;
+        }
+        .app-item img { width: 54px; height: 54px; border: 1px solid #333; border-radius: 8px; background: #111; }
+        .app-item span { display: block; font-size: 10px; margin-top: 4px; height: 22px; overflow: hidden; }
+
+        .btn-back { background: #444; color: #fff; display: block; padding: 12px; text-align: center; text-decoration: none; margin-bottom: 15px; border-radius: 4px; }
+        .btn-down { background: #0066cc; color: #fff; display: block; padding: 14px; text-align: center; text-decoration: none; font-weight: bold; margin-top: 8px; border-radius: 4px; border-bottom: 3px solid #004488; }
+        
+        .screen-scroll { white-space: nowrap; overflow-x: auto; margin: 10px 0; padding-bottom: 5px; }
+        .screen-scroll img { height: 140px; border: 1px solid #444; margin-right: 8px; border-radius: 4px; }
+        .info-box { background: #111; padding: 12px; border: 1px solid #222; font-size: 13px; line-height: 1.4; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<a href="tutors.html">Blackberry tutorials</a>
+<div id="app-root"></div>
+<script type="text/javascript">
+    // ТВОЙ МАССИВ ДАННЫХ
+        var appsData = [
+        {
+            "id": "app1",
+            "name": "Opera Mini",
+            "category": "Интернет",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fplay-lh.googleusercontent.com%2FOMqej9WONG1l8CXOgFH58XV1cGRgTcJxeffDiEXmkjkfLPK-g680lkzXGhJ7VMTmII4&f=1&nofb=1&ipt=b1729e624293f33ae965baf4d9e1bda7df3ecbc474d1de080da5a57d03345f5b",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.ytimg.com%2Fvi%2FV82crtWDNqM%2Fhqdefault.jpg%3Fsqp%3D-oaymwEmCOADEOgC8quKqQMa8AEB-AHUBoAC4AOKAgwIABABGH8gEygTMA8%3D%26rs%3DAOn4CLAhVw_Jce72g7SGIONRXSWEl5D_jA&f=1&nofb=1&ipt=c48d012eaf8519c4cf3ba5b7f76da718e101adf29a6380fe23020ccbc591862e","http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fimages.fonearena.com%2Fblog%2Fwp-content%2Fuploads%2F2014%2F03%2FOpera-Mini-8-for-BlackBerry1.jpg&f=1&nofb=1&ipt=6135a80d898a0a30f33b4017317b9a9eebec30a11c6e5adabfe980ca87bd5e84"],
+            "description": "Работает на всех Blackberry. Экономный браузер для BB OS 7.1.",
+            "downloads": {
+                "Скачать с офф. сайта": "m.opera.com"
+            }
+        },
+        {
+            "id": "app2",
+            "name": "Discord",
+            "category": "Мессенджеры",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Ffr%2Fthumb%2F4%2F4f%2FDiscord_Logo_sans_texte.svg%2F1818px-Discord_Logo_sans_texte.svg.png&f=1&nofb=1&ipt=459af38b4e3f607dabbb7343a57da1e83948d7296cb139411a7eb7f4c8449a22",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2F64.media.tumblr.com%2Fa1537b96acae7143b9bd7fa9076ed22f%2F3e708f517738ce93-d9%2Fs1280x1920%2F8429e4112464a59bf63b2776b07f296d6610b6a1.jpg&f=1&nofb=1&ipt=f0c8a2bf1af8d9b91b61e31311988fc76704943077a07d50e8c6ccf458b4730f"],
+            "description": "Работает на всех Blackberry. Порт дискорда на j2me, работают сервера и личные сообщения.",
+            "downloads": {
+                "Скачать .JAD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Internet/Discord/discord_blackberry.jad",
+                "Скачать .JAR (Main)": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Internet/Discord/discord_blackberry.jar"
+            }
+        },
+		{
+            "id": "app3",
+            "name": "JTube(YouTube клиент)",
+            "category": "Интернет",
+            "icon": "http://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Logo_of_YouTube_%282015-2017%29.svg/500px-Logo_of_YouTube_%282015-2017%29.svg.png",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fnnp.nnchan.ru%2Fimg%2F2_2.png&f=1&nofb=1&ipt=7c3a6a5e153843acfbf7bdd9f65b4e0a4e390516e0dff31b04cfb27c553362d6"],
+            "description": "Работает на всех Blackberry. Порт Youtube на j2me.",
+            "downloads": {
+                "Скачать .JAR": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Multimedia/JTube%20YouTube%20Client/jtube2-blackberry.jar"
+            },
+		},
+		{
+            "id": "app4",
+            "name": "Rock File Manager(.cod установщик тоже)",
+            "category": "Утилиты",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fblogger.googleusercontent.com%2Fimg%2Fb%2FR29vZ2xl%2FAVvXsEhUosFfmlxdKhEKop6VWsMxBZBhlEcwR5awLNj8Qp7xPFmaFSTiWiZ2qI0B5i9-lUQT2ob7e8l0rw_j0kARSHFDUXTCsrr5hT2Dp-wjbooMZPEb-JdtpWGeZER_8A98n6fa2GRaQLF_PPLA%2Fs1600%2Faplikasi%2Brock%2Bfile%2Bmanager.jpg&f=1&nofb=1&ipt=19b61b620201be5f060b491d79ed0e94cecfa387fc71e76dc89ed6af51803976",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Frock-it.org%2Ffiles%2FRockFileManager%2Fimg%2Flarge%2Fstart.png&f=1&nofb=1&ipt=8527617e546d30a6bd89022cfcd9dfe804fb52a3adab79bb7a10cbd06cffed03"],
+            "description": "Работает на всех Blackberry. Файловый менеджер, с возможностю устанавливать .cod.",
+            "downloads": {
+                "Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Utilities/Rock%20File%20Manager/Rock_File_Manager.cod"
+            }
+        },
+		{
+            "id": "app5",
+            "name": "Plants vs Zombies(480x320)",
+            "category": "Игры",
+            "icon": "http://upload.wikimedia.org/wikipedia/en/9/9c/PlantsvsZombiesCoverArt.jpg",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.ytimg.com%2Fvi%2FnKKbTzKc9Ow%2Fmaxresdefault.jpg%3Fsqp%3D-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGBEgcigdMA8%3D%26rs%3DAOn4CLA892s5nVgJcftYfl1nQfO-qsqJMg&f=1&nofb=1&ipt=6762d28e02d36b643487a9ffc806e0616dbeea016da754adcd3b55e41a004739","http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.ytimg.com%2Fvi%2FZz19VBYEVrE%2Fmaxresdefault.jpg%3Fsqp%3D-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGDcgSCh_MA8%3D%26rs%3DAOn4CLCPh9W0ZgJ1GRPfKr6hj7AlORFIoQ&f=1&nofb=1&ipt=0f8de97caa4699d4864fdcb423d3518bb8e7f000728410bcf6d959e0402721dd"],
+            "description": "Работает на большинстве Blackberry.",
+            "downloads": {
+                "Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Utilities/Rock%20File%20Manager/Rock_File_Manager.cod"
+            }
+        },
+		{
+            "id": "app6",
+            "name": "Sims 3(Touch)",
+            "category": "Игры",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.icons101.com%2Ficon_png%2Fsize_256%2Fid_69171%2FThe_Sims_3.png&f=1&nofb=1&ipt=69383ff5fc0bad1216fb358ad7c16e48d897f361ddd909d465de738bca0fb7e3",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.ytimg.com%2Fvi%2F2xmtB8Ion10%2Fmaxresdefault.jpg%3Fsqp%3D-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGHIgVyg6MA8%3D%26rs%3DAOn4CLCXLwGMSI8S42RC7zv2cdQaH0hfxg&f=1&nofb=1&ipt=21b45577d644c6d9bbac3a5a887829ca5bc9cbf8165e0c9ce93baab1249749b0","http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ffarm4.static.flickr.com%2F3383%2F3427190615_892665541e_m.jpg&f=1&nofb=1&ipt=7ab5240a7647072c59671afd274012472bd5bc3f2ec1f5dd8d209fc07d08dcd0"],
+            "description": "Работает на Blackberry Touch моделях.",
+            "downloads": {
+                "Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Games/The%20Sim%203/TheSims3WorldAdventures.cod"
+            }
+        },
+		{
+            "id": "app7",
+            "name": "Vectir",
+            "category": "Утилиты",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn.sharewareonsale.com%2Fwp-content%2Fuploads%2F2016%2F02%2Fvectir_boxed_large.png%3F8169&f=1&nofb=1&ipt=416d94b1979547e2abc485440881fb02e413c5ff8f3873f95a6ef401cbce2b31",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fnews-cdn.softpedia.com%2Fimages%2Fnews2%2FVectir-Review-467726-3.jpg&f=1&nofb=1&ipt=ae0510c849b81e25249ac45a1771498c37c6760a6c9d3bb54bf9f6a8824b0271"],
+            "description": "Работает на большинстве Blackberry. Управление ПК с телефона.",
+            "downloads": {
+                "Скачать .Zip": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Misc/Vectir/vectir-bb.zip"
+            }
+        },
+		{
+            "id": "app8",
+            "name": "BerryBuzz",
+            "category": "Утилиты",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ficons.veryicon.com%2Fpng%2Fo%2Fbrands%2Fapplication-logo%2Fblackberry-15.png&f=1&nofb=1&ipt=625e9de733dba417b5af648bb9d298e5e55c4b09b85762229130fc5e183c82b9",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fbbfansite.com%2Fwp%2Fwp-content%2Fuploads%2F2010%2F09%2FCapture-on-09-28-2010-17-24-23.jpg&f=1&nofb=1&ipt=a965ba49a58ca197fd94d2f088f38525f967c0b7878cb0a2ac1e06a806f317be"],
+            "description": "Работает на большинстве Blackberry. Управление рингтонами, уведомлениями и прочим.",
+            "downloads": {
+                "Скачать .alx": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Misc/BerryBuzz_OS%204.2%20and%20higher/berrybuzz.alx",
+				"Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Misc/BerryBuzz_OS%204.2%20and%20higher/berrybuzz.cod",
+				"Скачать .COD (1)": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Misc/BerryBuzz_OS%204.2%20and%20higher/berrybuzz-1.cod"
+            }
+        },
+		{
+            "id": "app9",
+            "name": "Math Solver(Full)",
+            "category": "Утилиты",
+            "icon": "http://i.postimg.cc/Ls8PV6gD/Screenshot-224.png",
+            "screenshots": ["http://i.postimg.cc/hvWhNSh4/Screenshot-225.png"],
+            "description": "Работает на всех Blackberry. Решение математических формул.",
+            "downloads": {
+                "Скачать .Rar (.JAR+.COD)": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Misc/MathSolver%20%5BFull%5D/MathSolver%20full.rar"
+            }
+        },
+		{
+            "id": "app10",
+            "name": "Photo Editor Ultimate 2",
+            "category": "Мультимедиа",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2F4.bp.blogspot.com%2F-3Xmy2PqlUbU%2FT4NeJS0_1dI%2FAAAAAAAAAi4%2FNKXz3dN7FZ8%2Fs320%2Fimages.jpg&f=1&nofb=1&ipt=3e0c62d78ba6340b491d520a18a9f74fd9805aaebd3d88d18acc1384d7b4eff0",
+            "screenshots": ["http://i.postimg.cc/hvWhNSh4/Screenshot-225.png"],
+            "description": "Работает на большинстве Blackberry. Хороший редактор фото.",
+            "downloads": {
+                "Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Multimedia/Photo%20Editor%20Ultimate%202/Photo_Editor_Ultimate_2.cod"
+            }
+        },
+		{
+            "id": "app11",
+            "name": "Podtrapper",
+            "category": "Мультимедиа",
+            "icon": "http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ficons.veryicon.com%2Fpng%2Fo%2Fbrands%2Fapplication-logo%2Fblackberry-15.png&f=1&nofb=1&ipt=625e9de733dba417b5af648bb9d298e5e55c4b09b85762229130fc5e183c82b9",
+            "screenshots": ["http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fd-cb.jc-cdn.com%2Fsites%2Fcrackberry.com%2Ffiles%2Fidol%2Fpodtrapper-01.jpg&f=1&nofb=1&ipt=09f41d1a0dbe218f70ea1c40ddd39d83f0a82c48f099c0c2e8d5a022c6aa57e7","http://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cnet.com%2Fa%2Fimg%2Fresize%2Ff8cc8cb37cfaaf18d0e3f64c2b6dea8e9208af94%2Fhub%2F2010%2F02%2F09%2F1f3ccdfa-cbf2-11e2-9a4a-0291187b029a%2Fpodtrapper.jpg%3Fauto%3Dwebp%26width%3D768&f=1&nofb=1&ipt=edbb7e21131ab65df241159cd431d20a199154aa09fcf67a66df6acfb510a640"],
+            "description": "Работает на большинстве Blackberry. Хороший редактор фото.",
+            "downloads": {
+                "Скачать .COD": "http://archive.lunar-project.org/BlackBerry%20OS/Apps/Multimedia/Photo%20Editor%20Ultimate%202/Photo_Editor_Ultimate_2.cod"
+            }
+        }
+		
+
+    ];
+
+    var root = document.getElementById('app-root');
+
+    function getParam(name) {
+        var s = window.location.search.substring(1).split("&");
+        for (var i = 0; i < s.length; i++) {
+            var p = s[i].split("=");
+            if (p[0] == name) return p[1];
+        }
+        return false;
+    }
+
+    function renderDetails(id) {
+        var a = null;
+        for (var i = 0; i < appsData.length; i++) {
+            if (appsData[i].id == id) { a = appsData[i]; break; }
+        }
+
+        if (!a) { 
+            root.innerHTML = 'Не найдено. <a href="index.html">Назад</a>';
+            return;
+        }
+
+        var sHtml = '';
+        if (a.screenshots && a.screenshots.length > 0) {
+            sHtml += '<div class="screen-scroll">';
+            for (var j = 0; j < a.screenshots.length; j++) {
+                sHtml += '<img src="' + a.screenshots[j] + '">';
+            }
+            sHtml += '</div>';
+        }
+
+        var bHtml = '';
+        for (var label in a.downloads) {
+            bHtml += '<a href="' + a.downloads[label] + '" class="btn-down">' + label + '</a>';
+        }
+
+        root.innerHTML = 
+            '<a href="blackberry.html" class="btn-back">← Назад</a>' +
+            '<div style="display:table; width:100%; margin-bottom:10px;">' +
+                '<div style="display:table-cell; width:60px; vertical-align:middle;">' +
+                    '<img src="' + a.icon + '" width="54" height="54">' +
+                '</div>' +
+                '<div style="display:table-cell; vertical-align:middle; padding-left:10px;">' +
+                    '<h2 style="margin:0; font-size:18px;">' + a.name + '</h2>' +
+                '</div>' +
+            '</div>' +
+            sHtml +
+            '<div class="info-box"><b>' + a.category + '</b><br><br>' + a.description + '</div>' +
+            bHtml;
+    }
+
+    function renderList() {
+        var cats = {};
+        for (var i = 0; i < appsData.length; i++) { cats[appsData[i].category] = true; }
+        
+        var cHtml = '<option value="all">Все категории</option>';
+        for (var k in cats) { cHtml += '<option value="' + k + '">' + k + '</option>'; }
+
+        var html = '<div class="search-area">' +
+            '<input type="text" id="sI" placeholder="Поиск..." onkeyup="doF()">' +
+            '<select id="sC" onchange="doF()">' + cHtml + '</select>' +
+            '</div><div id="lC" class="grid">';
+
+        for (var i = 0; i < appsData.length; i++) {
+            var item = appsData[i];
+            html += '<a href="?app=' + item.id + '" class="app-item" data-cat="' + item.category + '">' +
+                    '<img src="' + item.icon + '"><span>' + item.name + '</span></a>';
+        }
+        html += '</div>';
+        root.innerHTML = html;
+    }
+
+    window.doF = function() {
+        var q = document.getElementById('sI').value.toLowerCase();
+        var c = document.getElementById('sC').value;
+        var items = document.getElementsByClassName('app-item');
+        for (var i = 0; i < items.length; i++) {
+            var name = items[i].getElementsByTagName('span')[0].innerHTML.toLowerCase();
+            var cat = items[i].getAttribute('data-cat');
+            items[i].style.display = (name.indexOf(q) > -1 && (c == "all" || c == cat)) ? "inline-block" : "none";
+        }
+    };
+
+    var current = getParam("app");
+    if (current) renderDetails(current); else renderList();
+</script>
+
+</body>
+</html>
